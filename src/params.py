@@ -264,6 +264,7 @@ class GRPOArguments(GRPOConfigTRL):
     repetition_penalty: float = 1.0
     max_completion_length: int = 256
     max_prompt_length: int = 512
+    use_liger: bool = False
 
 
 @dataclass

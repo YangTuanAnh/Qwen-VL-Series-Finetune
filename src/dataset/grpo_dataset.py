@@ -7,67 +7,13 @@ import ujson as json
 from torch.utils.data import Dataset
 
 from src.params import DataArguments
-from src.constants import SYSTEM_MESSAGE
+from src.constants import (
+    DEFAULT_IM_START_TOKEN,
+    DEFAULT_IM_END_TOKEN,
+    SYSTEM_MESSAGE,
+)
 
-import re
-
-def replace_image_tokens(input_string, is_video=False):
-    pattern = r'\n?' + re.escape("<image>") + r'\n?' if not is_video else r'\n?' + re.escape("<video>") + r'\n?'
-
-    return re.sub(pattern, '', input_string)
-
-def llava_to_openai(conversations, is_video=False):
-    role_mapping = {"human": "user", "gpt": "assistant"}
-
-    transformed_data = []
-    for conversation in conversations:
-        transformed_content = replace_image_tokens(conversation["value"], is_video=is_video)
-        transformed_entry = {
-            "role": role_mapping.get(conversation["from"], conversation["from"]),
-            "content": transformed_content,
-        }
-        transformed_data.append(transformed_entry)
-
-    return transformed_data
-
-
-def get_image_content(image_path, min_pixel, max_pixel, width, height):
-    # Using this because of process_vision_info function
-    # Need to fix this in the future
-    content = {
-        "type": "image", 
-        "image": image_path,
-        "min_pixels": min_pixel,
-        "max_pixels": max_pixel
-    }
-
-    if width is not None and height is not None:
-        content["resized_width"] = width
-        content["resized_height"] = height
-
-    return content
-
-def get_video_content(video_path, min_pixels, max_pixels, width, height, fps, nframes):
-    # Using this because of process_vision_info function
-    # Need to fix this in the future
-    content = {
-        "type": "video", 
-        "video": video_path,
-        "min_pixels": min_pixels,
-        "max_pixels": max_pixels,
-    }
-
-    if nframes is not None:
-        content["nframes"] = nframes
-    else:
-        content["fps"] = fps
-
-    if width is not None and height is not None:
-        content["resized_width"] = width
-        content["resized_height"] = height
-    
-
-    return content
+from .data_utils import get_image_info, get_video_info, llava_to_openai
 
 class GRPODataset(Dataset):
     """Dataset for DPO training"""
@@ -110,24 +56,25 @@ class GRPODataset(Dataset):
 
         is_video = False
 
-        contents = []
-
         if "image" in sources:
-
+            videos = None
+            
             image_files = sources["image"]
             image_folder = self.data_args.image_folder
 
             if isinstance(image_files, str):
                 image_files = [image_files]
+
+            images = []
             
             for image_file in image_files:
                 if not os.path.exists(image_file):
                     if not image_file.startswith("http"):
                         image_file = os.path.join(image_folder, image_file)
-                contents.append(get_image_content(image_file, self.image_min_pixel, self.image_max_pixel, self.image_resized_w, self.image_resized_h))
-
+                images.append(get_image_info(image_file, self.image_min_pixel, self.image_max_pixel, self.image_resized_w, self.image_resized_h))
         elif "video" in sources:
             is_video = True
+            images=None
 
             video_files = sources["video"]
             video_folder = self.data_args.image_folder
@@ -135,30 +82,32 @@ class GRPODataset(Dataset):
             if isinstance(video_files, str):
                 video_files = [video_files]
 
+            videos = []
             for video_file in video_files:
                 if not os.path.exists(video_file):
                     if not video_file.startswith("http"):
                         video_file = os.path.join(video_folder, video_file)
-                contents.append(get_video_content(video_file, self.video_min_pixel, self.video_max_pixel, self.video_resized_w, self.video_resized_h, self.fps, self.nframes))
+                video_input, video_kwargs = get_video_info(video_file, self.video_min_pixel, self.video_max_pixel, self.video_resized_w, self.video_resized_h, self.data_args.fps)
+                videos.append(video_input)
+        else:
+            images=None
+            videos=None
 
         conversations = copy.deepcopy(llava_to_openai(sources['conversations'], is_video=is_video))
 
         user_input = conversations[0]
         gpt_response = conversations[1]
 
-        text_content = {"type": "text", "text": user_input['content']}
+        system_message = f"{DEFAULT_IM_START_TOKEN}system\n{SYSTEM_MESSAGE}{DEFAULT_IM_END_TOKEN}\n"
+        user_message = f"{DEFAULT_IM_START_TOKEN}{user_input['role']}\n{user_input['content']}{DEFAULT_IM_END_TOKEN}\n{DEFAULT_IM_START_TOKEN}{gpt_response['role']}\n"
 
-        contents.append(text_content)
+        user_prompt = system_message + user_message
+        assistant_prompt = gpt_response['content']
 
-        user_prompt = [{"role": "user", "content": contents}]
-
-        if len(SYSTEM_MESSAGE) > 0:
-            system_message = {"role": "system", "content": SYSTEM_MESSAGE}
-            user_prompt.insert(0, system_message)
-        
         data_dict = dict(
             prompt=user_prompt,
-            assistant=gpt_response,
+            assistant=assistant_prompt,
+            images=images,
         )
 
         return data_dict

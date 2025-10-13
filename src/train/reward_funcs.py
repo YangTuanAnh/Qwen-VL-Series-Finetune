@@ -1,54 +1,52 @@
-import os
 import re
-from datetime import datetime
-from math_verify import parse, verify
+from math_verify import LatexExtractionConfig, parse, verify
+from latex2sympy2_extended import NormalizationConfig
 
 def accuracy_reward(completions, assistant, **kwargs):
     """Reward function that checks if the completion is correct using either symbolic verification or exact string matching."""
-    contents = [completion[0]["content"] for completion in completions]
-    solution = [a['content'] for a in assistant]
     rewards = []
-    current_time = datetime.now().strftime("%d-%H-%M-%S-%f")
-    for content, sol in zip(contents, solution):
-        reward = 0.0
-        # Try symbolic verification first
+
+    for completion, sol in zip(completions, assistant):
         try:
-            answer = parse(content)
-            if float(verify(answer, parse(sol))) > 0:
-                reward = 1.0
-        except Exception:
-            pass  # Continue to next verification method if this fails
+            gold_parsed = parse(sol, extraction_mode="first_match")
+        except Exception as e:
+            gold_parsed = []
 
-        # If symbolic verification failed, try string matching
-        if reward == 0.0:
+        if len(gold_parsed) != 0:
+            # Try parsing predicted answer too
             try:
-                # Extract answer from solution if it has think/answer tags
-                sol_match = re.search(r"<answer>(.*?)</answer>", sol)
-                ground_truth = sol_match.group(1).strip() if sol_match else sol.strip()
-
-                # Extract answer from content if it has think/answer tags
-                content_match = re.search(r"<answer>(.*?)</answer>", content)
-                student_answer = content_match.group(1).strip() if content_match else content.strip()
-
-                # Compare the extracted answers
-                if student_answer == ground_truth:
-                    reward = 1.0
-            except Exception:
-                pass  # Keep reward as 0.0 if both methods fail
+                answer_parsed = parse(
+                    completion,
+                    extraction_config=[
+                        LatexExtractionConfig(
+                            normalization_config=NormalizationConfig(
+                                nits=False,
+                                malformed_operators=False,
+                                basic_latex=True,
+                                boxed="all",
+                                units=True,
+                            ),
+                            boxed_match_priority=0,
+                            try_extract_without_anchor=False,
+                        )
+                    ],
+                    extraction_mode="first_match",
+                )
+                reward = float(verify(gold_parsed, answer_parsed))
+            except Exception as e:
+                print(f"verify failed: {e}, answer: {completion}, gold: {sol}")
+                reward = None
+        else:
+            # fallback to text match
+            reward = float(completion.strip().lower() == sol.strip().lower())
 
         rewards.append(reward)
-        if os.getenv("DEBUG_MODE") == "true":
-            log_path = os.getenv("LOG_PATH")
-            with open(log_path, "a") as f:
-                f.write(f"------------- {current_time} Accuracy reward: {reward} -------------\n")
-                f.write(f"Content: {content}\n")
-                f.write(f"Solution: {sol}\n")
-    return rewards
 
+    return rewards
 
 def format_reward(completions, **kwargs):
     """Reward function that checks if the completion has a specific format."""
-    pattern = r"<think>.*?</think>\s*<answer>.*?</answer>"
-    completion_contents = [completion[0]["content"] for completion in completions]
-    matches = [re.match(pattern, content) for content in completion_contents]
-    return [1.0 if match else 0.0 for match in matches]
+    pattern = r"^<think>\n.*?\n</think>\n<answer>\n.*?\n</answer>$"
+    matches = [re.match(pattern, content, re.DOTALL | re.MULTILINE) for content in completions]
+    rewards = [1.0 if match else 0.0 for match in matches]
+    return rewards

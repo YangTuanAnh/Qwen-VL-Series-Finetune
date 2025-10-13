@@ -13,6 +13,7 @@ This repository contains a script for training [Qwen2-VL](https://huggingface.co
 
 ## Update
 
+- [2025/10/13] **Update GRPO for `trl==0.23.1`**
 - [2025/09/12] 🔥**Update for `transformers==4.56.1` and torch==`2.8.0`**
 - [2025/08/21] Add option for using 2-layer mlp for classification.
 - [2025/08/21] Add option for unfreeze only few layers for llm and vision tower.
@@ -459,8 +460,6 @@ Most of the training arugments are same as SFT, but few other arguments are adde
 
 </details>
 
-**Note:** **Liger GRPO loss** and **vLLM back-end** are not yet supported. Both will be added soon.
-
 ## Classification Finetuning
 
 ### ⚠️This is an experimental feature.
@@ -574,7 +573,6 @@ You could see this [issue](https://github.com/andimarafioti/florence2-finetuning
 - [x] Update the code base to the latest transformers.
 - [x] Add DPO
 - [x] Add GRPO
-- [ ] Fix GRPO liger loss to work
 
 ## Known Issues
 

@@ -78,15 +78,15 @@ def train():
         (ModelArguments, DataArguments, GRPOArguments))
     
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-    training_args.use_liger_loss = False
+    training_args.use_liger_loss = training_args.use_liger
     if "Qwen2.5" in model_args.model_id:
         # monkey patch the vision model
         replace_qwen2_5_vision()
         # It monkey patches the forward to handle mixed modality inputs.
-        replace_qwen2_5_with_mixed_modality_forward(use_liger=False)
+        replace_qwen2_5_with_mixed_modality_forward()
     else:
         # It monkey patches the forward to handle mixed modality inputs.
-        replace_qwen_2_with_mixed_modality_forward(use_liger=False)
+        replace_qwen_2_with_mixed_modality_forward()
 
     if data_args.nframes is not None and data_args.fps is not None:
         raise ValueError("You cannot set both `nframes` and `fps` at the same time. Please set only one of them.")
