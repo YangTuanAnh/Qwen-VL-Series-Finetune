@@ -163,6 +163,17 @@ def qwen2_5_mixed_modality_forward(
     if inputs_embeds is None:
         inputs_embeds = self.get_input_embeddings()(input_ids)
 
+    if pixel_values is None and pixel_values_videos is None:
+        # Create dummy pixel_values and grid_thw for avoiding deepspeed error.
+        dummy_pixel = torch.zeros(784, 1176).to(self.visual.get_device())
+        dummy_grid = torch.tensor([[1, 28, 28]]).to(self.visual.get_device())
+
+        image_embeds = self.get_image_features(dummy_pixel, dummy_grid)
+        # Operates as maksed_scatter for the image tokens
+        # However the values are all zeros so it dosen't affect the embeddings.
+        # This could avoid deepspeed error when some batch only has texts.
+        inputs_embeds += image_embeds.mean() * 0
+
     if pixel_values is not None:
         image_embeds = self.get_image_features(pixel_values, image_grid_thw)
         image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
