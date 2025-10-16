@@ -114,10 +114,10 @@ class QwenDPOTrainer(DPOTrainer):
         completion_attention_mask = concatenated_batch["completion_attention_mask"]
         
         input_ids = torch.cat((prompt_input_ids, completion_input_ids), dim=1)
-        attention_mask = torch.cat((prompt_attention_mask, completion_attention_mask), dim=1)
+        attention_mask = torch.cat((prompt_attention_mask, completion_attention_mask), dim=1).to(torch.long) 
         loss_mask = torch.cat(
             (torch.zeros_like(prompt_attention_mask), completion_attention_mask), dim=1
-        )
+        ).to(torch.long) 
 
         # Flush left to reduce the memory usage
         # [[0, 0, x, x, x, x],  ->  [[x, x, x, x],
