@@ -80,13 +80,13 @@ def train():
         # monkey patch the vision model
         replace_qwen2_5_vision()
         # It monkey patches the forward to handle mixed modality inputs.
-        replace_qwen2_5_with_mixed_modality_forward(use_liger=use_liger)
+        replace_qwen2_5_with_mixed_modality_forward()
         # This is becuase mixed-modality training monkey-patches the model forward method.
         if use_liger:
             apply_liger_kernel_to_qwen2_5_vl(fused_linear_cross_entropy=False)
     else:
         # It monkey patches the forward to handle mixed modality inputs.
-        replace_qwen_2_with_mixed_modality_forward(use_liger=use_liger)
+        replace_qwen_2_with_mixed_modality_forward()
         # This is becuase mixed-modality training monkey-patches the model forward method.
         if use_liger:
             apply_liger_kernel_to_qwen2_vl(fused_linear_cross_entropy=False)

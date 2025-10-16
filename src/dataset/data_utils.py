@@ -68,11 +68,9 @@ def pad_sequence(sequences, padding_side='right', padding_value=0):
             output.data[i, -length:] = seq
     return output
 
-def get_image_info(image_path, min_pixel, max_pixel, width, height):
+def get_image_info(image_path, min_pixel, max_pixel, width, height, image_patch_size):
     # Using this because of process_vision_info function
     # Need to fix this in the future
-
-
     content = {
         "type": "image", 
         "image": image_path,
@@ -85,42 +83,44 @@ def get_image_info(image_path, min_pixel, max_pixel, width, height):
         content["resized_height"] = height
     
     messages = [
-        {"role": "user", 
-         "content": [content]
+        {
+            "role": "user", 
+            "content": [content]
         }
     ]
 
-    image_input, _ = process_vision_info(messages)
+    image_input, _ = process_vision_info(messages, image_patch_size=image_patch_size)
 
     return image_input[0]
 
-def get_video_info(video_path, min_pixels, max_pixels, width, height, fps, nframes):
+def get_video_info(video_path, min_pixels, max_pixels, width, height, fps, image_patch_size, return_video_metadata=False):
     # Using this because of process_vision_info function
     # Need to fix this in the future
-
     content = {
         "type": "video", 
         "video": video_path,
         "min_pixels": min_pixels,
         "max_pixels": max_pixels,
+        "fps": fps
     }
-
-    if nframes is not None:
-        content["nframes"] = nframes
-    else:
-        content["fps"] = fps
 
     if width is not None and height is not None:
         content["resized_width"] = width
         content["resized_height"] = height
     
     messages = [
-        {"role": "user", 
-         "content": [content]
+        {
+            "role": "user", 
+            "content": [content]
         }
     ]
 
-    _, video_input, video_kwargs = process_vision_info(messages, return_video_kwargs=True)
+    _, video_input, video_kwargs = process_vision_info(
+        messages, 
+        return_video_kwargs=True, 
+        image_patch_size=image_patch_size, 
+        return_video_metadata=return_video_metadata
+    )
 
     return video_input[0], video_kwargs
 

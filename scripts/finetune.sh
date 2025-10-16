@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# You can use 2B instead of 7B
 # MODEL_NAME="Qwen/Qwen2-VL-7B-Instruct"
 # MODEL_NAME="Qwen/Qwen2-VL-2B-Instruct"
-MODEL_NAME="Qwen/Qwen2.5-VL-3B-Instruct"
+# MODEL_NAME="Qwen/Qwen2.5-VL-3B-Instruct"
 # MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
+
+MODEL_NAME="Qwen/Qwen3-VL-4B-Instruct"
 
 GLOBAL_BATCH_SIZE=128
 BATCH_PER_DEVICE=4
@@ -13,8 +14,10 @@ GRAD_ACCUM_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_PER_DEVICE * NUM_DEVICES)))
 
 export PYTHONPATH=src:$PYTHONPATH
 
+# If you want to set the min pixels and max pixels for Qwen3-VL, You should set as (N * 32 * 32)
+
 deepspeed src/train/train_sft.py \
-    --use_liger True \
+    --use_liger False \
     --deepspeed scripts/zero3_offload.json \
     --model_id $MODEL_NAME \
     --data_path /path/to/your/training/data.json \

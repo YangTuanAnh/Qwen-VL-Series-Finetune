@@ -18,8 +18,6 @@ from src.constants import (
 
 from .data_utils import get_image_info, get_video_info, llava_to_openai, pad_sequence
 
-
-
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
@@ -53,6 +51,13 @@ class SupervisedDataset(Dataset):
         self.fps = data_args.fps
         self.nframes = data_args.nframes
 
+        if "Qwen3" in self.model_id:
+            self.image_patch_size = 16
+            self.return_video_metadata = True
+        else:
+            self.image_patch_size = 14
+            self.return_video_metadata = False
+
     def __len__(self):
         return len(self.list_data_dict)
 
@@ -79,7 +84,15 @@ class SupervisedDataset(Dataset):
                 if not os.path.exists(image_file):
                     if not image_file.startswith("http"):
                         image_file = os.path.join(image_folder, image_file)
-                images.append(get_image_info(image_file, self.image_min_pixel, self.image_max_pixel, self.image_resized_w, self.image_resized_h))
+                image_input = get_image_info(
+                        image_file, 
+                        self.image_min_pixel, 
+                        self.image_max_pixel, 
+                        self.image_resized_w, 
+                        self.image_resized_h, 
+                        self.image_patch_size
+                    )
+                images.append(image_input)
 
         elif "video" in sources:
             is_video = True
@@ -98,7 +111,16 @@ class SupervisedDataset(Dataset):
                 if not os.path.exists(video_file):
                     if not video_file.startswith("http"):
                         video_file = os.path.join(video_folder, video_file)
-                video_input, video_kwargs = get_video_info(video_file, self.video_min_pixel, self.video_max_pixel, self.video_resized_w, self.video_resized_h, self.fps, self.nframes)
+                video_input, video_kwargs = get_video_info(
+                    video_file, 
+                    self.video_min_pixel, 
+                    self.video_max_pixel, 
+                    self.video_resized_w, 
+                    self.video_resized_h, 
+                    self.data_args.fps,
+                    self.image_patch_size,
+                    return_video_metadata=self.return_video_metadata
+                )
                 videos.append(video_input)
         else:
             grid_key = None
@@ -116,8 +138,10 @@ class SupervisedDataset(Dataset):
 
         image_curr_count = 0
         video_curr_count = 0
+        
         # Qwen2-VL uses a default system message so I've added this.
-        if len(SYSTEM_MESSAGE) > 0:
+        # Qwen3-Vl does not use a system message by default.
+        if len(SYSTEM_MESSAGE) > 0 and "Qwen3" not in self.model_id:
             system_message = f"{DEFAULT_IM_START_TOKEN}system\n{SYSTEM_MESSAGE}{DEFAULT_IM_END_TOKEN}\n"
             system_message_input_ids = processor.tokenizer(system_message, add_special_tokens=False, return_tensors='pt')['input_ids']
             system_labels = torch.full_like(system_message_input_ids, IGNORE_INDEX)
@@ -147,10 +171,41 @@ class SupervisedDataset(Dataset):
                 # Slice the videos list to get the videos for the current turn.
                 videos_for_this_turn = videos[video_curr_count : video_curr_count + num_videos]
                 if "Qwen2.5" in self.model_id:
-                    inputs = processor(text=[user_input], images=images, videos=videos_for_this_turn, padding=False, do_resize=False, return_tensors='pt', **video_kwargs)
+                    inputs = processor(
+                        text=[user_input], 
+                        images=images, 
+                        videos=videos_for_this_turn, 
+                        padding=False, 
+                        do_resize=False, 
+                        return_tensors='pt', 
+                        **video_kwargs
+                    )
                     all_second_gird.extend(inputs["second_per_grid_ts"])
+                elif "Qwen3" in self.model_id:
+
+                    video_datas, video_metadatas = zip(*videos)
+                    video_datas, video_metadatas = list(video_datas), list(video_metadatas)
+                    
+                    inputs = processor(
+                        text=[user_input], 
+                        images=images, 
+                        videos=videos_for_this_turn, 
+                        padding=False, 
+                        do_resize=False, 
+                        return_tensors='pt', 
+                        **video_kwargs, 
+                        video_metadata=video_metadatas,
+                    )
+                
                 else:
-                    inputs = processor(text=[user_input], images=images, videos=videos_for_this_turn, padding=False, do_resize=False, return_tensors='pt')
+                    inputs = processor(
+                        text=[user_input], 
+                        images=images, 
+                        videos=videos_for_this_turn, 
+                        padding=False, 
+                        do_resize=False, 
+                        return_tensors='pt'
+                    )
                 prompt_input_ids = inputs['input_ids']
                 all_pixel_values.append(inputs[pixel_key])
                 all_image_grid_thw.append(inputs[grid_key])

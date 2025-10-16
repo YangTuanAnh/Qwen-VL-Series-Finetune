@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# You can use 2B instead of 7B
 # MODEL_NAME="Qwen/Qwen2-VL-7B-Instruct"
 # MODEL_NAME="Qwen/Qwen2-VL-2B-Instruct"
-MODEL_NAME="Qwen/Qwen2.5-VL-3B-Instruct"
+# MODEL_NAME="Qwen/Qwen2.5-VL-3B-Instruct"
 # MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
+
+MODEL_NAME="Qwen/Qwen3-VL-4B-Instruct"
 
 export PYTHONPATH=src:$PYTHONPATH
 
@@ -14,6 +15,8 @@ NUM_DEVICES=8
 GRAD_ACCUM_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_PER_DEVICE * NUM_DEVICES)))
 
 # If you want to tune the `embed_token` with LoRA, You need to tune `lm_head` together
+
+# If you want to set the min pixels and max pixels for Qwen3-VL, You should set as (N * 32 * 32)
 
 deepspeed src/train/train_sft.py \
     --use_liger True \

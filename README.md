@@ -13,6 +13,7 @@ This repository contains a script for training [Qwen2-VL](https://huggingface.co
 
 ## Update
 
+- [2025/10/16] 🔥**Update for Qwen3-VL(non-moe) and `transformers==4.57.0`**
 - [2025/10/13] **Update GRPO for `trl==0.23.1`**
 - [2025/09/12] 🔥**Update for `transformers==4.56.1` and torch==`2.8.0`**
 - [2025/08/21] Add option for using 2-layer mlp for classification.
@@ -375,7 +376,8 @@ You could use [zero2_offload](./scripts/zero2_offload.json) for a bit faster tra
 
 The model supprots a wide range of resolution inputs. By default, it uses the native resolution for input.
 For better performance using native or higer pixel numbers are recommended, however it takes too much memory and computation time for large images. So you could adjust the pixel numbers for it.
-The model splits the image into `token * 28 * 28` so you could just change the the token_num part in the script. <br>
+The model splits the image into `token * 28 * 28` so you could just change the the token_num part in the script. <br><br>
+⚠️**For Qwen3-VL models, it should be `token * 32 * 32`.**<br><br>
 For example:
 
 ```

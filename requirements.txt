@@ -24,7 +24,6 @@ einops==0.8.1
 exceptiongroup==1.2.2
 executing==2.2.0
 filelock==3.13.1
-flash_attn==2.8.3
 fonttools==4.59.2
 frozenlist==1.6.0
 fsspec==2024.6.1
@@ -125,7 +124,7 @@ torchvision==0.23.0
 tornado==6.4.2
 tqdm==4.67.1
 traitlets==5.14.3
-transformers==4.56.1
+transformers==4.57.0
 triton==3.4.0
 trl==0.23.1
 typing_extensions==4.13.2

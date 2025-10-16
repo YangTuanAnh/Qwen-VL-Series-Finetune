@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# You can use 2B instead of 7B
+
 # MODEL_NAME="Qwen/Qwen2-VL-7B-Instruct"
 # MODEL_NAME="Qwen/Qwen2-VL-2B-Instruct"
 MODEL_NAME="Qwen/Qwen2.5-VL-3B-Instruct"
