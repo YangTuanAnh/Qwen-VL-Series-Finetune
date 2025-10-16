@@ -1,6 +1,7 @@
-# Fine-tuning Qwen2-VL Series
+# Fine-tuning Qwen-VL Series
 
-This repository contains a script for training [Qwen2-VL](https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct) and [Qwen2.5-VL](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct) with only using HuggingFace and [Liger-Kernel](https://github.com/linkedin/Liger-Kernel).
+This repository contains a script for training [Qwen2-VL](https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct), [Qwen2.5-VL](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct)
+and [Qwen3-VL](https://huggingface.co/Qwen/Qwen3-VL-4B-Thinking) with only using HuggingFace and [Liger-Kernel](https://github.com/linkedin/Liger-Kernel).
 
 ## Other projects
 
