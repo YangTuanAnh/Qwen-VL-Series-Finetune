@@ -1,20 +1,21 @@
 #!/bin/bash
 
 # MODEL_NAME="Qwen/Qwen2-VL-7B-Instruct"
-# MODEL_NAME="Qwen/Qwen2-VL-2B-Instruct"
-MODEL_NAME="Qwen/Qwen2.5-VL-3B-Instruct"
+MODEL_NAME="Qwen/Qwen2-VL-2B-Instruct"
+# MODEL_NAME="Qwen/Qwen2.5-VL-3B-Instruct"
 # MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 
 # MODEL_NAME="Qwen/Qwen3-VL-4B-Instruct"
 
 GLOBAL_BATCH_SIZE=128
 BATCH_PER_DEVICE=4
-NUM_DEVICES=8
+NUM_DEVICES=1
 GRAD_ACCUM_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_PER_DEVICE * NUM_DEVICES)))
 
 export PYTHONPATH=src:$PYTHONPATH
 
 deepspeed src/train/train_dpo.py \
+    --bits 4 \
     --dpo_loss "sigmoid" \
     --precompute_ref_log_probs False \
     --beta 0.1 \
@@ -22,8 +23,8 @@ deepspeed src/train/train_dpo.py \
     --lora_enable True \
     --use_dora False \
     --lora_namespan_exclude "['lm_head', 'embed_tokens']" \
-    --lora_rank 64 \
-    --lora_alpha 64 \
+    --lora_rank 4 \
+    --lora_alpha 4 \
     --lora_dropout 0.05 \
     --num_lora_modules -1 \
     --deepspeed scripts/zero3_offload.json \
@@ -36,13 +37,13 @@ deepspeed src/train/train_dpo.py \
     --freeze_merger True \
     --bf16 True \
     --fp16 False \
-    --disable_flash_attn2 False \
+    --disable_flash_attn2 True \
     --output_dir output/testing_lora \
     --num_train_epochs 1 \
     --per_device_train_batch_size $BATCH_PER_DEVICE \
     --gradient_accumulation_steps $GRAD_ACCUM_STEPS \
-    --image_min_pixels $((256 * 28 * 28)) \
-    --image_max_pixels $((1280 * 28 * 28)) \
+    --image_min_pixels $((96 * 28 * 28)) \
+    --image_max_pixels $((96 * 28 * 28)) \
     --learning_rate 1e-4 \
     --merger_lr 1e-5 \
     --vision_lr 2e-6 \
@@ -57,4 +58,4 @@ deepspeed src/train/train_dpo.py \
     --save_strategy "steps" \
     --save_steps 200 \
     --save_total_limit 10 \
-    --dataloader_num_workers 4
+    --dataloader_num_workers 1
