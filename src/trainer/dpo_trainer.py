@@ -43,7 +43,7 @@ class QwenDPOTrainer(DPOTrainer):
 
     @staticmethod
     def concatenated_inputs(
-        batch: dict[str, Union[list, torch.LongTensor]], padding_value: int
+        batch: dict[str, Union[list, torch.LongTensor]], padding_value: int, is_ref_model=True
     ) -> dict[str, torch.LongTensor]:
 
         concatenated_batch = {}
@@ -87,7 +87,7 @@ class QwenDPOTrainer(DPOTrainer):
         return concatenated_batch
     
 
-    def concatenated_forward(self, model: nn.Module, batch: dict[str, Union[list, torch.LongTensor]]):
+    def concatenated_forward(self, model: nn.Module, batch: dict[str, Union[list, torch.LongTensor]], is_ref_model=True):
 
         num_examples = batch['prompt_input_ids'].shape[0]
         

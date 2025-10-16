@@ -68,7 +68,7 @@ def pad_sequence(sequences, padding_side='right', padding_value=0):
             output.data[i, -length:] = seq
     return output
 
-def get_image_info(image_path, min_pixel, max_pixel, width, height, image_patch_size):
+def get_image_info(image_path, min_pixel, max_pixel, width, height):
     # Using this because of process_vision_info function
     # Need to fix this in the future
     content = {
@@ -89,7 +89,7 @@ def get_image_info(image_path, min_pixel, max_pixel, width, height, image_patch_
         }
     ]
 
-    image_input, _ = process_vision_info(messages, image_patch_size=image_patch_size)
+    image_input, _ = process_vision_info(messages)
 
     return image_input[0]
 
