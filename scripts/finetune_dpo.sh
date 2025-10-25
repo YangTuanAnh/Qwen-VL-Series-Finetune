@@ -20,6 +20,7 @@ deepspeed src/train/train_dpo.py \
     --beta 0.1 \
     --use_liger True \
     --lora_enable True \
+    --vision_lora True \
     --use_dora False \
     --lora_namespan_exclude "['lm_head', 'embed_tokens']" \
     --lora_rank 64 \
@@ -43,9 +44,7 @@ deepspeed src/train/train_dpo.py \
     --gradient_accumulation_steps $GRAD_ACCUM_STEPS \
     --image_min_pixels $((256 * 28 * 28)) \
     --image_max_pixels $((1280 * 28 * 28)) \
-    --learning_rate 1e-4 \
-    --merger_lr 1e-5 \
-    --vision_lr 2e-6 \
+    --learning_rate 2e-4 \
     --weight_decay 0.1 \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \
