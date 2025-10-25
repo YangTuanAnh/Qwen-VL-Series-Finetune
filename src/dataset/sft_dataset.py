@@ -90,7 +90,6 @@ class SupervisedDataset(Dataset):
                         self.image_max_pixel, 
                         self.image_resized_w, 
                         self.image_resized_h, 
-                        self.image_patch_size
                     )
                 images.append(image_input)
 

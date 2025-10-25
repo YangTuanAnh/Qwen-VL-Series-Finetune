@@ -9,15 +9,16 @@ MODEL_NAME="Qwen/Qwen2.5-VL-3B-Instruct"
 
 export PYTHONPATH=src:$PYTHONPATH
 
-GLOBAL_BATCH_SIZE=128
-BATCH_PER_DEVICE=4
-NUM_DEVICES=8
+GLOBAL_BATCH_SIZE=32
+BATCH_PER_DEVICE=1
+NUM_DEVICES=1
 GRAD_ACCUM_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_PER_DEVICE * NUM_DEVICES)))
 
 # If you want to tune the `embed_token` with LoRA, You need to tune `lm_head` together
 # You should freeze the the merger also, becuase the merger is included in the vision_tower.
 
 deepspeed src/train/train_sft.py \
+    --bits 4 \
     --use_liger True \
     --lora_enable True \
     --vision_lora True \
@@ -42,15 +43,15 @@ deepspeed src/train/train_sft.py \
     --num_train_epochs 1 \
     --per_device_train_batch_size $BATCH_PER_DEVICE \
     --gradient_accumulation_steps $GRAD_ACCUM_STEPS \
-    --image_min_pixels $((96 * 28 * 28)) \
-    --image_max_pixels $((96 * 28 * 28)) \
+    --image_min_pixels $((224 * 224)) \
+    --image_max_pixels $((224 * 224)) \
     --learning_rate 2e-4 \
     --weight_decay 0.1 \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \
     --logging_steps 1 \
     --tf32 False \
-    --gradient_checkpointing True \
+    --gradient_checkpointing False \
     --report_to tensorboard \
     --lazy_preprocess True \
     --save_strategy "steps" \
